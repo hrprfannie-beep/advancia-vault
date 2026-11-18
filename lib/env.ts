@@ -15,6 +15,8 @@ export const OPTIONAL_ENV_KEYS = [
   'VAPID_PRIVATE_KEY',
   'VAPID_SUBJECT',
   'COLUMN_API_KEY',
+  'COLUMN_SANDBOX_OWNER_USER_ID',
+  'COLUMN_SANDBOX_BANK_ACCOUNT_ID',
 ] as const
 
 export function getEnvStatus(key: string) {

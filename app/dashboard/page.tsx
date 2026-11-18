@@ -5,6 +5,7 @@ import { getSupabaseConfigErrorMessage } from "@/lib/supabase/config";
 import { getRuntimeConfigStatus } from "@/lib/env";
 import WalletAddressQr from "@/components/WalletAddressQr";
 import BitcoinWalletConnect from "@/components/BitcoinWalletConnect";
+import ColumnSandboxAccount from "@/components/ColumnSandboxAccount";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,10 @@ export default async function DashboardPage() {
   if (!user) redirect("/login");
 
   const status = getRuntimeConfigStatus();
+  const columnSandboxAvailable =
+    process.env.COLUMN_SANDBOX_OWNER_USER_ID?.trim() === user.id &&
+    Boolean(process.env.COLUMN_SANDBOX_BANK_ACCOUNT_ID?.trim()) &&
+    Boolean(process.env.COLUMN_API_KEY?.trim()?.startsWith("test_"));
   const readinessMessage = status.financialServicesEnabled
     ? "Financial services are intentionally disabled by the feature gate."
     : status.ok
@@ -50,6 +55,7 @@ export default async function DashboardPage() {
         <Link href="/notifications">Manage notification settings</Link>
       </p>
       <BitcoinWalletConnect />
+      {columnSandboxAvailable && <ColumnSandboxAccount />}
       <WalletAddressQr />
     </main>
   );

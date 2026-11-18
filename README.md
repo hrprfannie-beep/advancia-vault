@@ -87,11 +87,13 @@ Web Push. The test action is user-triggered and sends only to devices belonging
 to the authenticated account.
 
 Column's integration scaffold is server-side and sandbox-only. Set
-`COLUMN_API_KEY` to a Column test key to use
-`getColumnSandboxBankAccount` from a server context; live keys are rejected.
-It only supports a read-only account lookup and does not expose a customer API
-route, create accounts, or initiate payments. Do not enable customer access
-until verified account ownership, authorization, compliance, and provider
+`COLUMN_API_KEY` to a Column test key, then set
+`COLUMN_SANDBOX_OWNER_USER_ID` and `COLUMN_SANDBOX_BANK_ACCOUNT_ID` server-side
+only after verifying that test account's owner. The authenticated owner can
+read the account through `/api/column/account`; the response omits account and
+routing numbers and owner details. Live keys are rejected. This sandbox flow
+does not create accounts or initiate payments. Do not enable production
+customer access until ownership, authorization, compliance, and provider
 controls are implemented and reviewed.
 
 ## Checks
