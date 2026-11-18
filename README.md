@@ -19,8 +19,15 @@ demo UI does not imply that a financial service is operational.
   implemented as production services.
 - Card issuance and management are disabled until identity verification,
   account ownership controls, and card-program approval are implemented.
+- Financial routes are behind the `VAULTEX_FINANCIAL_SERVICES_ENABLED=true`
+  feature gate; this must remain off until KYC, verified ownership, and the
+  provider controls are implemented and independently reviewed.
 - Support chat and ticket submission are UI-only and do not send requests to a
   support system.
+- Web Push is optional. Users opt in per device through `/notifications`;
+  enabling it requires VAPID keys and the Supabase security migration. The
+  settings page can send a test notification only to that signed-in user's
+  registered devices, with up to five devices per account.
 
 Do not use this application to handle real customer funds or sensitive identity
 documents until the relevant integrations, authorization, data policies, and
@@ -57,9 +64,10 @@ server-authorized operation.
 For an existing Supabase project, review and apply
 [`supabase-security-migration.sql`](./supabase-security-migration.sql) before
 deploying. It replaces the prior permissive card/push-subscription policies
-with user-scoped access. Existing rows are left unowned and remain inaccessible
-until an administrator verifies their owner; do not bulk-assign them based on
-wallet addresses supplied by clients.
+with user-scoped access and adds user-scoped transaction reads. Existing
+card/push rows remain unowned and inaccessible until an administrator verifies
+their owner; transaction rows without a verified `user_id` remain inaccessible.
+Do not bulk-assign records based on wallet addresses supplied by clients.
 
 ## Optional integrations
 
@@ -70,6 +78,22 @@ make the related user flows production-ready; review the current-status notes
 and complete the required API authorization, provider setup, data policies,
 failure handling, and end-to-end tests first.
 
+To enable browser push, generate a VAPID key pair once (for example with
+`npx web-push generate-vapid-keys`) and set `VAPID_PUBLIC_KEY`,
+`VAPID_PRIVATE_KEY`, and `VAPID_SUBJECT`. Keep the private key server-side and
+stable across deployments. Apply the Supabase migration before subscribing
+devices. Push requires HTTPS outside localhost and a browser that supports
+Web Push. The test action is user-triggered and sends only to devices belonging
+to the authenticated account.
+
+Column's integration scaffold is server-side and sandbox-only. Set
+`COLUMN_API_KEY` to a Column test key to use
+`getColumnSandboxBankAccount` from a server context; live keys are rejected.
+It only supports a read-only account lookup and does not expose a customer API
+route, create accounts, or initiate payments. Do not enable customer access
+until verified account ownership, authorization, compliance, and provider
+controls are implemented and reviewed.
+
 ## Checks
 
 ```powershell
@@ -77,6 +101,11 @@ npm run lint
 npm run typecheck
 npm run build
 ```
+
+Runtime configuration checks are available through
+`/api/health`, which reports whether the required Supabase variables are set,
+whether the application is ready for production, and whether the
+financial-services feature gate is enabled. It does not reveal secret values.
 
 Pull requests run the same checks in GitHub Actions. The `main` branch is
 protected by a repository ruleset that requires pull requests and the CI

@@ -21,6 +21,7 @@ export interface Transaction {
   created_at: string
   chain: string
   fee_usd: number
+  provider_event_id: string | null
 }
 
 export interface IssuedCard {
@@ -45,7 +46,11 @@ export async function saveTransaction(tx: Omit<Transaction,'id'|'created_at'>) {
   if (!adminDb) {
     throw new Error('Supabase writes require SUPABASE_SERVICE_ROLE_KEY.')
   }
-  const { data, error } = await adminDb.from('transactions').insert(tx).select().single()
+  const { data, error } = await adminDb
+    .from('transactions')
+    .upsert(tx, { onConflict: 'provider_event_id' })
+    .select()
+    .single()
   if (error) throw new Error(`saveTransaction failed: ${error.message}`)
   return data
 }

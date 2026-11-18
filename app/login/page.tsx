@@ -6,6 +6,8 @@ export default async function LoginPage({
   searchParams: Promise<{ error?: string | string[] }>;
 }) {
   const { error } = await searchParams;
+  const errorMessage =
+    typeof error === "string" ? error : Array.isArray(error) ? error[0] : undefined;
 
-  return <LoginForm callbackFailed={Boolean(error)} />;
+  return <LoginForm errorMessage={errorMessage} callbackFailed={Boolean(errorMessage)} />;
 }

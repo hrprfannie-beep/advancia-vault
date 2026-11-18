@@ -6,15 +6,17 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 
 export default function LoginForm({
   callbackFailed,
+  errorMessage,
 }: {
   callbackFailed: boolean;
+  errorMessage?: string;
 }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState(
     callbackFailed
-      ? "We couldn't sign you in. Please request a new sign-in link."
+      ? errorMessage || "We couldn't sign you in. Please request a new sign-in link."
       : ""
   );
   const [isSubmitting, setIsSubmitting] = useState(false);

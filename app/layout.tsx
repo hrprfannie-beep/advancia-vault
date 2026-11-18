@@ -1,5 +1,24 @@
 import type { Metadata, Viewport } from 'next'
+import { DM_Sans, Space_Mono, Syne } from 'next/font/google'
 import './globals.css'
+
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-dm-sans',
+})
+
+const syne = Syne({
+  subsets: ['latin'],
+  weight: ['400', '600', '700', '800'],
+  variable: '--font-syne',
+})
+
+const spaceMono = Space_Mono({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  variable: '--font-space-mono',
+})
 
 export const metadata: Metadata = {
   title: 'VAULTEX',
@@ -18,14 +37,11 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${dmSans.variable} ${syne.variable} ${spaceMono.variable}`}>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
-      <body>{children}</body>
+      <body className={dmSans.className}>{children}</body>
     </html>
   )
 }

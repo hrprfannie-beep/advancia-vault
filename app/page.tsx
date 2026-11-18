@@ -1,11 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
+
+interface RuntimeHealthStatus {
+  ok: boolean
+  readyForProduction: boolean
+  financialServicesEnabled: boolean
+}
 
 const NAV = [
   ['Buy Crypto', '/onramp'],
   ['Cards', '/cards'],
+  ['Notifications', '/notifications'],
   ['KYC', '/kyc'],
   ['Support', '/support'],
   ['Legal', '/legal'],
@@ -67,20 +74,14 @@ const FOOTER_LINKS = [
 ]
 
 export default function Home() {
-  const [notifShown, setNotifShown] = useState(false)
+  const [health, setHealth] = useState<RuntimeHealthStatus | null>(null)
 
-  const requestNotifs = async () => {
-    if ('Notification' in window) {
-      const permission = await Notification.requestPermission()
-      if (permission === 'granted') {
-        setNotifShown(true)
-        new Notification('VAULTEX', {
-          body: 'Push notifications enabled! 🎉',
-          icon: '/icons/icon.svg',
-        })
-      }
-    }
-  }
+  useEffect(() => {
+    fetch('/api/health')
+      .then((response) => response.json())
+      .then((payload: RuntimeHealthStatus) => setHealth(payload))
+      .catch(() => setHealth({ ok: false, readyForProduction: false, financialServicesEnabled: false }))
+  }, [])
 
   return (
     <main className="page">
@@ -98,6 +99,30 @@ export default function Home() {
       </header>
 
       <section className="hero">
+        {health && (
+          <div
+            style={{
+              margin: '0 auto 18px',
+              maxWidth: 720,
+              padding: '10px 14px',
+              borderRadius: 10,
+              border: '1px solid rgba(0,240,255,0.35)',
+              background: health.readyForProduction
+                ? 'rgba(0,240,255,0.08)'
+                : health.financialServicesEnabled
+                  ? 'rgba(255,140,66,0.08)'
+                  : 'rgba(0,229,160,0.08)',
+              color: '#E2EAF5',
+              fontSize: 13,
+            }}
+          >
+            {health.financialServicesEnabled
+              ? 'Financial services are intentionally disabled by the feature gate.'
+              : health.readyForProduction
+                ? 'Current configuration is ready for the pre-live environment.'
+                : 'Required auth configuration is not yet complete.'}
+          </div>
+        )}
         <p className="eyebrow">Your digital assets, in one place</p>
         <h1>Manage your digital wealth with confidence.</h1>
         <p>
@@ -111,13 +136,9 @@ export default function Home() {
           <a className="secondary" href="/onramp">
             BUY CRYPTO
           </a>
-          <button
-            className="secondary notification-button"
-            type="button"
-            onClick={requestNotifs}
-          >
-            {notifShown ? '🔔 ENABLED' : '🔔 NOTIFICATIONS'}
-          </button>
+          <Link className="secondary notification-button" href="/notifications">
+            🔔 NOTIFICATIONS
+          </Link>
         </div>
 
         <div className="stats" aria-label="Platform statistics">
