@@ -1,0 +1,11 @@
+services:
+  api:
+    build:
+      context: ./api
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:4000:4000"
+    environment:
+      HOST: 0.0.0.0
+      PORT: "4000"
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:?Set INTERNAL_TOKEN in the local environment or .env file}
