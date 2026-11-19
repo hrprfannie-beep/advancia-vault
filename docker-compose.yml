@@ -1,11 +1,38 @@
 services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: column
+      POSTGRES_USER: column
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U column -d column"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   api:
+    image: vaultex-api:latest
     build:
       context: ./api
     restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
     ports:
       - "127.0.0.1:4000:4000"
     environment:
       HOST: 0.0.0.0
       PORT: "4000"
-      INTERNAL_TOKEN: ${INTERNAL_TOKEN:?Set INTERNAL_TOKEN in the local environment or .env file}
+      COLUMN_API_KEY: ${COLUMN_API_KEY:-}
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:?INTERNAL_TOKEN is required}
+      COLUMN_WEBHOOK_SECRET: ${COLUMN_WEBHOOK_SECRET:-}
+      COLUMN_SIGNATURE_ENCODING: ${COLUMN_SIGNATURE_ENCODING:-}
+      COLUMN_WEBHOOK_ENABLED: ${COLUMN_WEBHOOK_ENABLED:-false}
+      DATABASE_URL: "postgres://column:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@db:5432/column"
+
+volumes:
+  pgdata:

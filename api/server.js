@@ -1,9 +1,13 @@
 import crypto from "node:crypto";
 import express from "express";
+import { createRequire } from "node:module";
 import { pathToFileURL } from "node:url";
 
 const PORT = Number(process.env.PORT || 4000);
 const HOST = process.env.HOST || "127.0.0.1";
+const require = createRequire(import.meta.url);
+const { createColumnWebhookHandler } = require("./columnWebhook.cjs");
+const { createStore } = require("./db.cjs");
 
 export function validateInternalToken(token) {
   if (typeof token !== "string" || Buffer.byteLength(token, "utf8") < 32) {
@@ -41,7 +45,7 @@ function requireInternalToken(env) {
   };
 }
 
-export function createApp(env = process.env) {
+export function createApp(env = process.env, store = null) {
   const app = express();
   app.disable("x-powered-by");
 
@@ -55,24 +59,39 @@ export function createApp(env = process.env) {
 
   app.post(
     "/webhooks/column",
-    express.raw({ type: "*/*", limit: "1mb" }),
-    (_req, res) => {
-      res.status(503).json({ error: "column_webhook_not_ready" });
-    },
+    express.raw({ type: "application/json", limit: "1mb" }),
+    createColumnWebhookHandler({
+      store,
+      secret: env.COLUMN_WEBHOOK_SECRET,
+      encoding: env.COLUMN_SIGNATURE_ENCODING,
+      enabled: env.COLUMN_WEBHOOK_ENABLED === "true",
+    }),
   );
 
   return app;
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  try {
-    validateInternalToken(process.env.INTERNAL_TOKEN);
-  } catch (error) {
-    console.error(error.message);
-    process.exit(1);
+async function startApi() {
+  const env = process.env;
+  validateInternalToken(env.INTERNAL_TOKEN);
+
+  let store = null;
+  if (env.DATABASE_URL) {
+    store = createStore(env.DATABASE_URL);
+    await store.init();
   }
 
-  createApp().listen(PORT, HOST, () => {
+  return createApp(env, store).listen(PORT, HOST, () => {
     console.log(`API listening on ${HOST}:${PORT}`);
   });
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  try {
+    await startApi();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown startup error";
+    console.error(`API startup failed: ${message}`);
+    process.exitCode = 1;
+  }
 }
